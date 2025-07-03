@@ -1,0 +1,28 @@
+<!-- Tailwind CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<div class="fixed top-20 right-6 bg-white text-black rounded-xl shadow-2xl p-6 w-[28rem] z-50 font-sans space-y-4 border border-gray-200">
+  <h1 class="text-2xl font-bold">LEETBUDDY - <span class="font-normal">your code Buddy</span></h1>
+
+  <div class="space-y-2">
+    <p class="text-lg font-medium">Leetcode <span id="problem-title">xxx</span> - <span class="font-normal">problem desc</span></p>
+    <p class="text-md font-semibold">Analyzed difficulty - <span id="difficulty-analysis">easy to medium</span></p>
+  </div>
+
+  <div>
+    <button id="reveal-hint" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">Reveal Hint</button>
+    <p id="hint-text" class="mt-2 text-gray-800 hidden">HINT: Loading...</p>
+  </div>
+
+  <div class="mt-4">
+    <button id="generate-solution" class="text-indigo-600 underline">Want the LeetBuddy's AI generated solution? (copied to clipboard)</button>
+  </div>
+
+  <div class="mt-4">
+    <label for="notes" class="block text-sm font-medium mb-1">Your personal space :)</label>
+    <textarea id="notes" rows="4" class="w-full border border-gray-300 rounded p-2 text-sm" placeholder="Write anything..."></textarea>
+  </div>
+
+  <button id="submit-btn" class="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition w-full">Submit →</button>
+</div>
+<script src="test.js"></script>
