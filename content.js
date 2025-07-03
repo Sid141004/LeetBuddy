@@ -1,37 +1,29 @@
+function waitForProblemInfo(sendResponse) {
+  const maxTries = 20;
+  let tries = 0;
+
+  const interval = setInterval(() => {
+    const titleLink = document.querySelector("a.no-underline.truncate.cursor-text");
+    if (titleLink && titleLink.innerText.trim()) {
+      clearInterval(interval);
+      const fullText = titleLink.innerText.trim();
+      const match = fullText.match(/^(\d+)\.\s+(.*)$/);
+      const number = match?.[1] || "N/A";
+      const title = match?.[2] || fullText;
+      const slug = location.pathname.split("/")[2] || "";
+      sendResponse({ number, title, slug });
+    } else {
+      tries++;
+      if (tries >= maxTries) {
+        clearInterval(interval);
+        sendResponse({ number: "?", title: "Unknown", slug: "" });
+      }
+    }
+  }, 300);
+}
+
 window.addEventListener('load', () => {
   console.log("✅ content.js loaded");
-
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.action === "getProblemInfo") {
-      waitForProblemInfo(sendResponse);
-      return true;
-    }
-  });
-
-  function waitForProblemInfo(sendResponse) {
-    const maxTries = 20;
-    let tries = 0;
-
-    const interval = setInterval(() => {
-      const titleLink = document.querySelector("a.no-underline.truncate.cursor-text");
-      if (titleLink && titleLink.innerText.trim()) {
-        clearInterval(interval);
-        const fullText = titleLink.innerText.trim();
-        const match = fullText.match(/^(\d+)\.\s+(.*)$/);
-        const number = match?.[1] || "N/A";
-        const title = match?.[2] || fullText;
-        const slug = location.pathname.split("/")[2] || "";
-        console.log({ number, title, slug });
-        sendResponse({ number, title, slug });
-      } else {
-        tries++;
-        if (tries >= maxTries) {
-          clearInterval(interval);
-          sendResponse({ number: "?", title: "Unknown", slug: "" });
-        }
-      }
-    }, 300);
-  }
 
   injectChatbox();
 });
@@ -39,7 +31,6 @@ window.addEventListener('load', () => {
 function injectChatbox() {
   if (document.getElementById('leetbuddy-chatbox') || document.getElementById('chat-toggle-bubble')) return;
 
-  // 🟢 1. Create the toggle bubble
   const bubble = document.createElement('div');
   bubble.id = 'chat-toggle-bubble';
   bubble.style.cssText = `
@@ -68,13 +59,12 @@ function injectChatbox() {
     bubble.style.display = 'none';
   });
 
-  // 🟢 2. Chatbox creation
   function showChatbox() {
     if (document.getElementById('leetbuddy-chatbox')) {
       document.getElementById('leetbuddy-chatbox').style.display = 'flex';
       return;
     }
-
+    
     const div = document.createElement('div');
     div.id = 'leetbuddy-chatbox';
     div.style.cssText = `
@@ -146,7 +136,6 @@ function injectChatbox() {
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
 
-    // Message rendering
     function addMessage(sender, text) {
       const msg = document.createElement('div');
       msg.style.padding = '8px';
@@ -166,25 +155,74 @@ function injectChatbox() {
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Submit handler
     chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const userText = chatInput.value.trim();
       if (!userText) return;
 
       addMessage('user', userText);
-      chatInput.value = '';
 
-      chrome.runtime.sendMessage({ action: 'chatMessage', text: userText }, (response) => {
-        if (response && response.reply) {
-          addMessage('bot', response.reply);
-        } else {
-          addMessage('bot', 'Sorry, I could not get a response.');
-        }
+      waitForProblemInfo((problem) => {
+        const { number, title, slug } = problem || {};
+
+        const systemPrompt = `
+You are **LeetBuddy**, an expert and encouraging LeetCode mentor.
+
+You're currently helping with LeetCode Problem ${number}: ${title} (slug: ${slug}).
+
+Your goal is to **guide users** toward solving coding problems themselves — not just give answers.
+
+Here’s how you interact:
+- First introduction should be introducing yourself without mentioning the problem, then ask if we can dive into it or ask how can u help
+- Ask users to share their current thought process or approach.
+- Nudge them in the right direction with subtle hints, patterns, or concepts they may have overlooked.
+- If users directly ask for the full solution, encourage them to first share an intuition or a partial plan.
+- Only after they’ve tried or asked again, provide the solution in their preferred language — clearly, but concisely.
+- Always give constructive criticism and motivate them. Celebrate progress, even if small.
+- Use examples and analogies where helpful, but **never add unrelated information**.
+- Keep responses **short, helpful, and focused on problem-solving**.
+- Keep introductions playful and use emojis to lighten the mood relatively frequently.
+
+Act like a mentor who wants the user to become independent and confident — not just copy-paste solutions.
+        `;
+
+        chrome.storage.sync.get(['geminiApiKey'], ({ geminiApiKey }) => {
+          if (!geminiApiKey) {
+            addMessage('bot', "⚠️ API key not found. Please add it in the popup.");
+            return;
+          }
+
+          const contents = [
+            {
+              role: "model",
+              parts: [{ text: systemPrompt.trim() }]
+            },
+            {
+              role: "user",
+              parts: [{ text: userText }]
+            }
+          ];
+
+          fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents })
+          })
+            .then(res => res.json())
+            .then(data => {
+              const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
+              addMessage('bot', reply);
+            })
+            .catch(err => {
+              console.error(err);
+              addMessage('bot', "❌ Error talking to Gemini.");
+            });
+        });
       });
+
+      chatInput.value = '';
     });
 
-    // Close chat
     toggle.addEventListener('click', () => {
       chatbox.style.display = 'none';
       document.getElementById('chat-toggle-bubble').style.display = 'flex';
@@ -192,7 +230,6 @@ function injectChatbox() {
 
     // Drag logic
     let isDragging = false, offsetX, offsetY;
-
     const header = document.getElementById('chat-header');
     header.addEventListener('mousedown', (e) => {
       isDragging = true;
