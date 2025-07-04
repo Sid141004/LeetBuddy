@@ -22,23 +22,25 @@ function waitForProblemInfo(sendResponse) {
   }, 300);
 }
 
-window.addEventListener('load', () => {
+window.addEventListener("load", () => {
   console.log("✅ content.js loaded");
+
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === "getProblemInfo") {
-        waitForProblemInfo(sendResponse);
-        return true;
+      waitForProblemInfo(sendResponse);
+      return true;
     }
-   });
+  });
 
   injectChatbox();
 });
 
 function injectChatbox() {
-  if (document.getElementById('leetbuddy-chatbox') || document.getElementById('chat-toggle-bubble')) return;
+  const messageHistories = {};
+  if (document.getElementById("leetbuddy-chatbox") || document.getElementById("chat-toggle-bubble")) return;
 
-  const bubble = document.createElement('div');
-  bubble.id = 'chat-toggle-bubble';
+  const bubble = document.createElement("div");
+  bubble.id = "chat-toggle-bubble";
   bubble.style.cssText = `
     position: fixed;
     bottom: 20px;
@@ -57,22 +59,22 @@ function injectChatbox() {
     color: #000;
     font-weight: bold;
   `;
-  bubble.textContent = '💬';
+  bubble.textContent = "💬";
   document.body.appendChild(bubble);
 
-  bubble.addEventListener('click', () => {
+  bubble.addEventListener("click", () => {
     showChatbox();
-    bubble.style.display = 'none';
+    bubble.style.display = "none";
   });
 
   function showChatbox() {
-    if (document.getElementById('leetbuddy-chatbox')) {
-      document.getElementById('leetbuddy-chatbox').style.display = 'flex';
+    if (document.getElementById("leetbuddy-chatbox")) {
+      document.getElementById("leetbuddy-chatbox").style.display = "flex";
       return;
     }
-    
-    const div = document.createElement('div');
-    div.id = 'leetbuddy-chatbox';
+
+    const div = document.createElement("div");
+    div.id = "leetbuddy-chatbox";
     div.style.cssText = `
       position: fixed;
       bottom: 20px;
@@ -137,36 +139,31 @@ function injectChatbox() {
     document.body.appendChild(div);
 
     const chatbox = div;
-    const toggle = document.getElementById('chat-toggle');
-    const chatForm = document.getElementById('chat-input-form');
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
+    const toggle = document.getElementById("chat-toggle");
+    const chatForm = document.getElementById("chat-input-form");
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
 
     function addMessage(sender, text) {
-      const msg = document.createElement('div');
-      msg.style.padding = '8px';
-      msg.style.borderRadius = '6px';
-      msg.style.whiteSpace = 'pre-wrap';
-      msg.style.maxWidth = '80%';
-      if (sender === 'user') {
-        msg.style.backgroundColor = '#4ade80';
-        msg.style.color = '#000';
-        msg.style.alignSelf = 'flex-end';
-      } else {
-        msg.style.backgroundColor = '#2c2c2c';
-        msg.style.alignSelf = 'flex-start';
-      }
+      const msg = document.createElement("div");
+      msg.style.padding = "8px";
+      msg.style.borderRadius = "6px";
+      msg.style.whiteSpace = "pre-wrap";
+      msg.style.maxWidth = "80%";
+      msg.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
+      msg.style.backgroundColor = sender === "user" ? "#4ade80" : "#2c2c2c";
+      msg.style.color = sender === "user" ? "#000" : "#fff";
       msg.textContent = text;
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    chatForm.addEventListener('submit', (e) => {
+    chatForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const userText = chatInput.value.trim();
       if (!userText) return;
 
-      addMessage('user', userText);
+      addMessage("user", userText);
 
       waitForProblemInfo((problem) => {
         const { number, title, slug } = problem || {};
@@ -190,73 +187,78 @@ Here’s how you interact:
 - Keep introductions playful and use emojis to lighten the mood relatively frequently.
 
 Act like a mentor who wants the user to become independent and confident — not just copy-paste solutions.
-        `;
+        `.trim();
 
-        chrome.storage.sync.get(['geminiApiKey'], ({ geminiApiKey }) => {
+        chrome.storage.sync.get(["geminiApiKey"], ({ geminiApiKey }) => {
           if (!geminiApiKey) {
-            addMessage('bot', "⚠️ API key not found. Please add it in the popup.");
+            addMessage("bot", "⚠️ API key not found. Please add it in the popup.");
             return;
           }
 
-          const contents = [
-            {
+          if (!messageHistories[slug]) {
+            messageHistories[slug] = [{
               role: "model",
-              parts: [{ text: systemPrompt.trim() }]
-            },
-            {
-              role: "user",
-              parts: [{ text: userText }]
-            }
-          ];
+              parts: [{ text: systemPrompt }]
+            }];
+          }
+
+          messageHistories[slug].push({
+            role: "user",
+            parts: [{ text: userText }]
+          });
 
           fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents })
+            body: JSON.stringify({ contents: messageHistories[slug] })
           })
             .then(res => res.json())
             .then(data => {
               const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
-              addMessage('bot', reply);
+              addMessage("bot", reply);
+              messageHistories[slug].push({
+                role: "model",
+                parts: [{ text: reply }]
+              });
             })
             .catch(err => {
               console.error(err);
-              addMessage('bot', "❌ Error talking to Gemini.");
+              addMessage("bot", "❌ Error talking to Gemini.");
             });
         });
       });
 
-      chatInput.value = '';
+      chatInput.value = "";
     });
 
-    toggle.addEventListener('click', () => {
-      chatbox.style.display = 'none';
-      document.getElementById('chat-toggle-bubble').style.display = 'flex';
+    toggle.addEventListener("click", () => {
+      chatbox.style.display = "none";
+      document.getElementById("chat-toggle-bubble").style.display = "flex";
     });
 
-    // Drag logic
     let isDragging = false, offsetX, offsetY;
-    const header = document.getElementById('chat-header');
-    header.addEventListener('mousedown', (e) => {
+    const header = document.getElementById("chat-header");
+
+    header.addEventListener("mousedown", (e) => {
       isDragging = true;
       offsetX = e.clientX - chatbox.getBoundingClientRect().left;
       offsetY = e.clientY - chatbox.getBoundingClientRect().top;
-      document.addEventListener('mousemove', dragMove);
-      document.addEventListener('mouseup', dragStop);
+      document.addEventListener("mousemove", dragMove);
+      document.addEventListener("mouseup", dragStop);
     });
 
     function dragMove(e) {
       if (!isDragging) return;
       chatbox.style.left = `${e.clientX - offsetX}px`;
       chatbox.style.top = `${e.clientY - offsetY}px`;
-      chatbox.style.right = 'auto';
-      chatbox.style.bottom = 'auto';
+      chatbox.style.right = "auto";
+      chatbox.style.bottom = "auto";
     }
 
     function dragStop() {
       isDragging = false;
-      document.removeEventListener('mousemove', dragMove);
-      document.removeEventListener('mouseup', dragStop);
+      document.removeEventListener("mousemove", dragMove);
+      document.removeEventListener("mouseup", dragStop);
     }
   }
 }
