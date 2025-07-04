@@ -24,6 +24,12 @@ function waitForProblemInfo(sendResponse) {
 
 window.addEventListener('load', () => {
   console.log("✅ content.js loaded");
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.action === "getProblemInfo") {
+        waitForProblemInfo(sendResponse);
+        return true;
+    }
+   });
 
   injectChatbox();
 });

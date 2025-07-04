@@ -15,7 +15,7 @@ document.getElementById("reveal-hint").addEventListener("click", () => {
         hintText.textContent = "No active tab found.";
         return;
       }
-
+      console.log("sending getProblemInfo to tab", tabs[0])
       chrome.tabs.sendMessage(tabs[0].id, { action: "getProblemInfo" }, async (response) => {
         console.log("Hint button: response from content script:", response);
         if (chrome.runtime.lastError) {
