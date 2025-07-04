@@ -162,72 +162,8 @@ function injectChatbox() {
       e.preventDefault();
       const userText = chatInput.value.trim();
       if (!userText) return;
-
       addMessage("user", userText);
-
-      waitForProblemInfo((problem) => {
-        const { number, title, slug } = problem || {};
-
-        const systemPrompt = `
-You are **LeetBuddy**, an expert and encouraging LeetCode mentor.
-
-You're currently helping with LeetCode Problem ${number}: ${title} (slug: ${slug}).
-
-Your goal is to **guide users** toward solving coding problems themselves — not just give answers.
-
-Here’s how you interact:
-- First introduction should be introducing yourself without mentioning the problem, then ask if we can dive into it or ask how can u help
-- Ask users to share their current thought process or approach.
-- Nudge them in the right direction with subtle hints, patterns, or concepts they may have overlooked.
-- If users directly ask for the full solution, encourage them to first share an intuition or a partial plan.
-- Only after they’ve tried or asked again, provide the solution in their preferred language — clearly, but concisely.
-- Always give constructive criticism and motivate them. Celebrate progress, even if small.
-- Use examples and analogies where helpful, but **never add unrelated information**.
-- Keep responses **short, helpful, and focused on problem-solving**.
-- Keep introductions playful and use emojis to lighten the mood relatively frequently.
-
-Act like a mentor who wants the user to become independent and confident — not just copy-paste solutions.
-        `.trim();
-
-        chrome.storage.sync.get(["geminiApiKey"], ({ geminiApiKey }) => {
-          if (!geminiApiKey) {
-            addMessage("bot", "⚠️ API key not found. Please add it in the popup.");
-            return;
-          }
-
-          if (!messageHistories[slug]) {
-            messageHistories[slug] = [{
-              role: "model",
-              parts: [{ text: systemPrompt }]
-            }];
-          }
-
-          messageHistories[slug].push({
-            role: "user",
-            parts: [{ text: userText }]
-          });
-
-          fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: messageHistories[slug] })
-          })
-            .then(res => res.json())
-            .then(data => {
-              const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
-              addMessage("bot", reply);
-              messageHistories[slug].push({
-                role: "model",
-                parts: [{ text: reply }]
-              });
-            })
-            .catch(err => {
-              console.error(err);
-              addMessage("bot", "❌ Error talking to Gemini.");
-            });
-        });
-      });
-
+      geminiReply(userText, addMessage, messageHistories);
       chatInput.value = "";
     });
 
@@ -236,6 +172,7 @@ Act like a mentor who wants the user to become independent and confident — not
       document.getElementById("chat-toggle-bubble").style.display = "flex";
     });
 
+    // Drag logic
     let isDragging = false, offsetX, offsetY;
     const header = document.getElementById("chat-header");
 
@@ -261,4 +198,72 @@ Act like a mentor who wants the user to become independent and confident — not
       document.removeEventListener("mouseup", dragStop);
     }
   }
+}
+
+// 🔁 Modularized Gemini reply function
+function geminiReply(userText, addMessage, messageHistories) {
+  waitForProblemInfo((problem) => {
+    const { number, title, slug } = problem || {};
+
+    const systemPrompt = `
+You are **LeetBuddy**, an expert and encouraging LeetCode mentor.
+
+You're currently helping with LeetCode Problem ${number}: ${title} (slug: ${slug}).
+
+Your goal is to **guide users** toward solving coding problems themselves — not just give answers.
+
+Here’s how you interact:
+- First introduction should be introducing yourself without mentioning the problem, then ask if we can dive into it or ask how can u help
+- Ask users to share their current thought process or approach.
+- Nudge them in the right direction with subtle hints, patterns, or concepts they may have overlooked.
+- If users directly ask for the full solution, encourage them to first share an intuition or a partial plan.
+- Only after they’ve tried or asked again, provide the solution in their preferred language — clearly, but concisely.
+- Always give constructive criticism and motivate them. Celebrate progress, even if small.
+- Use examples and analogies where helpful, but **never add unrelated information**.
+- Keep responses **short, helpful, and focused on problem-solving**.
+- Keep introductions playful and use emojis to lighten the mood relatively frequently.
+
+Act like a mentor who wants the user to become independent and confident — not just copy-paste solutions.
+    `.trim();
+
+    chrome.storage.sync.get(["geminiApiKey"], ({ geminiApiKey }) => {
+      if (!geminiApiKey) {
+        addMessage("bot", "⚠️ API key not found. Please add it in the popup.");
+        return;
+      }
+
+      if (!messageHistories[slug]) {
+        messageHistories[slug] = [
+          {
+            role: "model",
+            parts: [{ text: systemPrompt }]
+          }
+        ];
+      }
+
+      messageHistories[slug].push({
+        role: "user",
+        parts: [{ text: userText }]
+      });
+
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: messageHistories[slug] })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
+          addMessage("bot", reply);
+          messageHistories[slug].push({
+            role: "model",
+            parts: [{ text: reply }]
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          addMessage("bot", "❌ Error talking to Gemini.");
+        });
+    });
+  });
 }
