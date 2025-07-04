@@ -1,3 +1,5 @@
+let shouldSendFirstMessage = true;
+
 function waitForProblemInfo(sendResponse) {
   const maxTries = 20;
   let tries = 0;
@@ -157,7 +159,12 @@ function injectChatbox() {
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
+    console.log(`before : {shouldSendFirstMessage}`);
+    if (shouldSendFirstMessage){
+        geminiReply("introduce yourself", addMessage, messageHistories);
+        shouldSendFirstMessage = false;
+    }
+    console.log(`after : {shouldSendFirstMessage}`);
     chatForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const userText = chatInput.value.trim();
@@ -166,7 +173,7 @@ function injectChatbox() {
       geminiReply(userText, addMessage, messageHistories);
       chatInput.value = "";
     });
-
+    //close button
     toggle.addEventListener("click", () => {
       chatbox.style.display = "none";
       document.getElementById("chat-toggle-bubble").style.display = "flex";
