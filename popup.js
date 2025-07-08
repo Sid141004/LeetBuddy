@@ -156,3 +156,13 @@ async function getGeminiReply(prompt, apiKey) {
   const data = await res.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No output.";
 }
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "reveal_buttons"){
+        let hintBtn = document.getElementById("reveal-hint");
+        let submitBtn = document.getElementById("submit-btn");
+
+        if (hintBtn) hintBtn.classList.remove("hidden"); 
+        if (submitBtn) submitBtn.classList.remove("hidden");
+    }
+});

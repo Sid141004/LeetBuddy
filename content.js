@@ -14,6 +14,9 @@ function waitForProblemInfo(sendResponse) {
       const title = match?.[2] || fullText;
       const slug = location.pathname.split("/")[2] || "";
       sendResponse({ number, title, slug });
+      chrome.runtime.sendMessage({
+        action: "reveal_buttons"
+      });
     } else {
       tries++;
       if (tries >= maxTries) {
