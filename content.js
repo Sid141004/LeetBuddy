@@ -158,6 +158,7 @@ function injectChatbox() {
       msg.textContent = text;
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+      return msg;
     }
     console.log(`before : {shouldSendFirstMessage}`);
     if (shouldSendFirstMessage){
@@ -253,6 +254,8 @@ Act like a mentor who wants the user to become independent and confident — not
         parts: [{ text: userText }]
       });
 
+      const thinkingMsg = addMessage("bot", "🤖 Typing...");
+
       fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -261,7 +264,10 @@ Act like a mentor who wants the user to become independent and confident — not
         .then((res) => res.json())
         .then((data) => {
           const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
-          addMessage("bot", reply);
+          thinkingMsg.textContent = reply;
+          thinkingMsg.style. backgroundColor = "#2c2c2c";
+          thinkingMsg.style.color = "#fff";
+
           messageHistories[slug].push({
             role: "model",
             parts: [{ text: reply }]
