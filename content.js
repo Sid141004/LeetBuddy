@@ -43,6 +43,56 @@ window.addEventListener("load", () => {
 function injectChatbox() {
   const messageHistories = {};
   if (document.getElementById("leetbuddy-chatbox") || document.getElementById("chat-toggle-bubble")) return;
+  
+  function typewriterEffect(element, text, delay = 20) {
+  let i = 0;
+  element.innerHTML = ""; // Clear content first
+
+  const caret = document.createElement("span");
+  caret.className = "blinking-caret";
+  element.appendChild(caret);
+
+  const interval = setInterval(() => {
+    if (i >= text.length) {
+      clearInterval(interval);
+      caret.remove(); // Remove caret when done
+      return;
+    }
+
+    const char = text[i];
+    const displayChar = char === "\n" ? "<br>" : char;
+    caret.insertAdjacentHTML("beforebegin", displayChar);
+    i++;
+
+    // Scroll chat to bottom while typing
+    const chatMessages = document.getElementById("chat-messages");
+    if (chatMessages) {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  }, delay);
+}
+
+
+  
+  const style = document.createElement("style");
+  style.textContent = `
+  .blinking-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: orange;
+    animation: blink 0.7s step-end infinite;
+    vertical-align: bottom;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    from, to { opacity: 0 }
+    50% { opacity: 1 }
+  }
+`;
+  document.head.appendChild(style);
+
 
   const bubble = document.createElement("div");
   bubble.id = "chat-toggle-bubble";
@@ -149,7 +199,7 @@ function injectChatbox() {
     const chatMessages = document.getElementById("chat-messages");
     const chatInput = document.getElementById("chat-input");
 
-    function addMessage(sender, text) {
+    function addMessage(sender, text, isTyping = false) {
       const msg = document.createElement("div");
       msg.style.padding = "8px";
       msg.style.borderRadius = "6px";
@@ -158,7 +208,12 @@ function injectChatbox() {
       msg.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
       msg.style.backgroundColor = sender === "user" ? "#4ade80" : "#2c2c2c";
       msg.style.color = sender === "user" ? "#000" : "#fff";
-      msg.textContent = text;
+      
+      if (isTyping && sender == "bot"){
+        typewriterEffect(msg, text);
+      }else{
+        msg.textContent = text;
+      }
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
       return msg;
@@ -267,9 +322,8 @@ Act like a mentor who wants the user to become independent and confident — not
         .then((res) => res.json())
         .then((data) => {
           const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
-          thinkingMsg.textContent = reply;
-          thinkingMsg.style. backgroundColor = "#2c2c2c";
-          thinkingMsg.style.color = "#fff";
+          thinkingMsg.remove();
+          addMessage("bot", reply, true);
 
           messageHistories[slug].push({
             role: "model",
