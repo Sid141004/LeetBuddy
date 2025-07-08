@@ -1,69 +1,155 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>LeetBuddy</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      h1 {
-        color: #4285f4;
-      }
-      .form-group {
-        margin-bottom: 20px;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      input[type="text"] {
-        width: 100%;
-        padding: 8px;
-        box-sizing: border-box;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      button {
-        background-color: #4285f4;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #3367d6;
-      }
-      .success-message {
-        color: green;
-        margin-top: 10px;
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>AI Summary Settings</h1>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LeetBuddy Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      color: #111827;
+    }
 
-    <div class="form-group">
-      <label for="api-key">Gemini API Key:</label>
-      <input type="text" id="api-key" placeholder="Enter your Gemini API key" />
-      <p>
-        You can get an API key from
-        <a href="https://makersuite.google.com/app/apikey" target="_blank"
-          >Google AI Studio</a
-        >
-      </p>
+    .container {
+      max-width: 480px;
+      margin: 60px auto;
+      background-color: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #4f46e5;
+    }
+
+    p {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+      background-color: #f9fafb;
+      color: #111827;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      background-color: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #4f46e5;
+    }
+
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #16a34a;
+      font-weight: 500;
+    }
+
+    .reference {
+      margin-top: 28px;
+      font-size: 13px;
+      color: #6b7280;
+      background: #f9fafb;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border-left: 4px solid #6366f1;
+    }
+
+    .reference a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .reference a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>LeetBuddy Settings</h1>
+    <p>Provide your <strong>Gemini API Key</strong> to enable LeetBuddy's chat functionality on LeetCode problems.</p>
+
+    <label for="api-key">Gemini API Key:</label>
+    <input type="text" id="api-key" placeholder="Enter your API key..." />
+
+    <button id="save-btn">💾 Save Key</button>
+    <div class="status" id="status"></div>
+
+    <div class="reference">
+      🔑 Need a Gemini API key? Get one from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio →</a>
     </div>
+  </div>
 
-    <button id="save-button">Save Settings</button>
-    <p id="success-message" class="success-message">
-      Settings saved successfully!
-    </p>
+  <div class="footer">
+    Built for LeetCode users • © LeetBuddy
+  </div>
 
-    <script src="options.js"></script>
-  </body>
+  <script>
+    const apiKeyInput = document.getElementById('api-key');
+    const status = document.getElementById('status');
+
+    chrome.storage.sync.get(['geminiApiKey'], (result) => {
+      if (result.geminiApiKey) {
+        apiKeyInput.value = result.geminiApiKey;
+        status.textContent = "✅ API Key Loaded";
+      }
+    });
+
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        status.textContent = "❌ Please enter a valid API key.";
+        status.style.color = "#dc2626";
+        return;
+      }
+      chrome.storage.sync.set({ geminiApiKey: apiKey }, () => {
+        status.textContent = "✅ API Key saved!";
+        status.style.color = "#16a34a";
+      });
+    });
+  </script>
+</body>
 </html>

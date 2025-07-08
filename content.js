@@ -155,7 +155,7 @@ function injectChatbox() {
           background: #f3f4f6; color: #111827;
           outline: none;
         " autocomplete="off" />
-        <button type="submit" style="
+        <button type="submit" id = "send-btn" style="
           background: #6366f1;
           border: none; color: white;
           padding: 12px 16px;
@@ -171,6 +171,7 @@ function injectChatbox() {
     const chatForm = document.getElementById("chat-input-form");
     const chatMessages = document.getElementById("chat-messages");
     const chatInput = document.getElementById("chat-input");
+    const chatSendBtn = document.getElementById("send-btn");
 
     function addMessage(sender, text, isTyping = false) {
       const msg = document.createElement("div");
@@ -201,6 +202,9 @@ function injectChatbox() {
     chatForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const userText = chatInput.value.trim();
+      chatInput.disabled = true;
+      chatSendBtn.disabled = true;
+      chatSendBtn.textContent = "⏳";
       if (!userText) return;
       addMessage("user", userText);
       geminiReply(userText, addMessage, messageHistories);
@@ -286,11 +290,21 @@ function geminiReply(userText, addMessage, messageHistories) {
           thinkingMsg.remove();
           const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response received.";
           addMessage("bot", reply, true);
+          const chatInput = document.getElementById("chat-input");
+          const chatSendBtn = document.getElementById("send-btn");
+          chatInput.disabled = false;
+          chatSendBtn.disabled = false;
+          chatSendBtn.textContent = "Send";
           messageHistories[slug].push({ role: "model", parts: [{ text: reply }] });
         })
         .catch((err) => {
           console.error(err);
           addMessage("bot", "❌ Error talking to Gemini.");
+          const chatInput = document.getElementById("chat-input");
+          const chatSendBtn = document.getElementById("send-btn");
+          chatInput.disabled = false;
+          chatSendBtn.disabled = false;
+          chatSendBtn.textContent = "Send";
         });
     });
   });
