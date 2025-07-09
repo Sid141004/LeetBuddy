@@ -60,7 +60,7 @@ LeetBuddy is a Chrome extension that brings a context-aware AI assistant right i
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/leetbuddy.git
+git clone https://github.com/yourusername/LeetBuddy.git
 cd leetbuddy
 ```
 ### 2. Load the Extension in Chrome
