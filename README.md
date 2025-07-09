@@ -53,3 +53,32 @@ LeetBuddy is a Chrome extension that brings a context-aware AI assistant right i
 | Gemini API (2.5 Pro)|
 +---------------------+
 
+---
+
+## 📦 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/leetbuddy.git
+cd leetbuddy
+
+2. Add Your Gemini API Key
+Click the LeetBuddy icon in your browser toolbar.
+
+Enter your Gemini API key into the popup.
+
+Save your key.
+
+💡 You can get an API key from Google AI Studio
+
+3. Load the Extension in Chrome
+Go to chrome://extensions
+
+Enable Developer mode (top right)
+
+Click Load unpacked
+
+Select the leetbuddy/ folder
+
+You're now ready to use LeetBuddy!
