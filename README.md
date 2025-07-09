@@ -64,7 +64,7 @@ git clone https://github.com/yourusername/leetbuddy.git
 cd leetbuddy
 ```
 ### 2. Load the Extension in Chrome
-Go to chrome://extensions
+Go to chrome://extensions (or similarly in other browsers)
 
 Enable Developer mode (top right)
 
