@@ -18,7 +18,7 @@ LeetBuddy is a Chrome extension that brings a context-aware AI assistant right i
 ## 🧠 Tech Stack
 
 - Chrome Extensions API
-- Vanilla JS + HTML/CSS
+- Vanilla JS + HTML/TailWind CSS 
 - DOM parsing and manipulation
 - Google AI Studio (Gemini 2.5 Pro)
 - Scoped memory and prompt structuring
